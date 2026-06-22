@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { CONTACT, MAILTO, WHATSAPP } from '../config.js'
 
 /* ─── Icons ─── */
@@ -29,7 +31,7 @@ const IconPhone = () => (
 
 const navLinks = ['#about', '#products', '#experience', '#skills', '#achievements', '#contact']
 
-/* ─── Info contact cards (bottom row) ─── */
+/* ─── Info contact cards ─── */
 const infoCards = [
   {
     icon: <IconEmail />,
@@ -37,7 +39,7 @@ const infoCards = [
     value: CONTACT.email,
     sub: 'Opens email client',
     href: MAILTO,
-    color: 'var(--accent)',
+    color: 'var(--accent-dark)',
     bg: 'var(--accent-dim)',
     border: 'var(--border-accent)',
     external: false,
@@ -49,8 +51,8 @@ const infoCards = [
     sub: 'Connect professionally',
     href: CONTACT.linkedin,
     color: '#60A5FA',
-    bg: 'rgba(96,165,250,0.1)',
-    border: 'rgba(96,165,250,0.2)',
+    bg: 'rgba(96, 165, 250, 0.1)',
+    border: 'rgba(96, 165, 250, 0.2)',
     external: true,
   },
   {
@@ -59,9 +61,9 @@ const infoCards = [
     value: 'Tanaypai123',
     sub: 'See my code & projects',
     href: CONTACT.github,
-    color: 'var(--text-2)',
-    bg: 'rgba(255,255,255,0.05)',
-    border: 'rgba(255,255,255,0.1)',
+    color: 'var(--text-1)',
+    bg: 'rgba(0,0,0,0.03)',
+    border: 'rgba(0,0,0,0.07)',
     external: true,
   },
   {
@@ -70,181 +72,249 @@ const infoCards = [
     value: `+${CONTACT.phone}`,
     sub: 'Available for calls',
     href: `tel:+${CONTACT.phone}`,
-    color: '#34D399',
-    bg: 'rgba(52,211,153,0.1)',
-    border: 'rgba(52,211,153,0.2)',
+    color: '#4B6B5B',
+    bg: 'var(--green-dim)',
+    border: 'rgba(143, 168, 155, 0.2)',
     external: false,
   },
 ]
 
-/* ─── CTA Button component with glow ─── */
-function CTAButton({ href, children, variant = 'primary', ariaLabel }) {
-  const isPrimary = variant === 'primary'
-  const isWhatsApp = variant === 'whatsapp'
+// Magnetic Button Wrapper
+function MagneticButton({ children, href, style, variant }) {
+  const ref = useRef(null)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
 
-  const base = {
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-    padding: '15px 36px', borderRadius: 12,
-    fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em',
-    textDecoration: 'none', border: 'none', cursor: 'none',
-    transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)',
-    position: 'relative', overflow: 'hidden',
-    outline: 'none',
+  const handleMouseMove = (e) => {
+    if (!ref.current) return
+    const { clientX, clientY } = e
+    const { left, top, width, height } = ref.current.getBoundingClientRect()
+    const centerX = left + width / 2
+    const centerY = top + height / 2
+    const distanceX = clientX - centerX
+    const distanceY = clientY - centerY
+
+    const maxDist = 80
+    const dist = Math.hypot(distanceX, distanceY)
+    if (dist < maxDist) {
+      setPosition({ x: distanceX * 0.3, y: distanceY * 0.3 })
+    } else {
+      setPosition({ x: 0, y: 0 })
+    }
   }
 
-  const styles = {
-    primary: {
-      ...base,
-      background: 'linear-gradient(135deg, #6C63FF, #4F46E5)',
-      color: '#fff',
-      boxShadow: '0 0 0 0 rgba(108,99,255,0)',
-    },
-    whatsapp: {
-      ...base,
-      background: 'linear-gradient(135deg, #25D366, #128C7E)',
-      color: '#fff',
-      boxShadow: '0 0 0 0 rgba(37,211,102,0)',
-    },
-  }
-
-  const hoverStyles = {
-    primary: { transform: 'translateY(-3px)', boxShadow: '0 16px 48px rgba(108,99,255,0.45), 0 0 0 1px rgba(108,99,255,0.5)' },
-    whatsapp: { transform: 'translateY(-3px)', boxShadow: '0 16px 48px rgba(37,211,102,0.35), 0 0 0 1px rgba(37,211,102,0.4)' },
+  const handleMouseLeave = () => {
+    setPosition({ x: 0, y: 0 })
   }
 
   return (
-    <a
-      href={href}
-      target={href.startsWith('http') ? '_blank' : undefined}
-      rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-      aria-label={ariaLabel}
-      style={styles[variant]}
-      onMouseEnter={e => Object.assign(e.currentTarget.style, hoverStyles[variant])}
-      onMouseLeave={e => Object.assign(e.currentTarget.style, { transform: '', boxShadow: styles[variant].boxShadow })}
-      onFocus={e => Object.assign(e.currentTarget.style, hoverStyles[variant])}
-      onBlur={e => Object.assign(e.currentTarget.style, { transform: '', boxShadow: styles[variant].boxShadow })}
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: 'spring', stiffness: 150, damping: 15, mass: 0.1 }}
+      style={{ display: 'inline-block' }}
     >
-      {children}
-    </a>
+      <a
+        href={href}
+        target={href.startsWith('http') ? '_blank' : undefined}
+        rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+        className="btn"
+        style={{
+          ...style,
+          cursor: 'none',
+          boxShadow: variant === 'primary' 
+            ? '0 10px 24px rgba(0,0,0,0.06)' 
+            : '0 10px 24px rgba(37,211,102,0.15)',
+        }}
+      >
+        {children}
+      </a>
+    </motion.div>
   )
 }
 
 export default function Contact() {
+  const scrollReveal = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+    }
+  }
+
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.08,
+      }
+    }
+  }
+
   return (
     <>
-      <section id="contact" style={{ paddingBottom: 0 }}>
+      <section id="contact" style={{ paddingBottom: 0, background: 'var(--bg)' }}>
         <div className="container">
 
-          {/* ── Centered heading ── */}
-          <div style={{ textAlign: 'center', marginBottom: 52, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span className="section-label reveal" style={{ marginBottom: 20 }}>Get in Touch</span>
-            <h2 className="heading reveal reveal-delay-1" style={{
-              fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-              marginBottom: 16,
+          {/* Centered Heading */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={scrollReveal}
+            style={{ textAlign: 'center', marginBottom: 56, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+          >
+            <span className="section-label">Get in Touch</span>
+            <h2 className="heading" style={{
+              fontSize: 'clamp(2.5rem, 5vw, 4.2rem)',
+              marginBottom: 20,
               textAlign: 'center',
-              lineHeight: 1.12,
+              lineHeight: 1.15,
+              color: 'var(--text-1)'
             }}>
               Let&apos;s Build Something
               <br />
-              <span style={{ color: 'var(--accent)', display: 'block', textAlign: 'center' }}>Together</span>
+              <span style={{ color: 'var(--accent-dark)', display: 'block', textAlign: 'center' }}>Together</span>
             </h2>
-            <p className="reveal reveal-delay-2" style={{ color: 'var(--text-2)', fontSize: '1.05rem', maxWidth: 500, margin: '0 auto 12px' }}>
+            <p style={{ color: 'var(--text-2)', fontSize: '1.15rem', maxWidth: 540, margin: '0 auto 16px', lineHeight: 1.6 }}>
               Open to full-time roles, internships, freelance projects, and interesting collaboration opportunities.
             </p>
-            <p className="reveal reveal-delay-3" style={{ color: 'var(--text-3)', fontSize: '0.875rem' }}>
+            <p style={{ color: 'var(--text-3)', fontSize: '0.95rem', fontWeight: 550 }}>
               📍 Jaipur, Rajasthan, India
             </p>
-          </div>
+          </motion.div>
 
-          {/* ── Primary CTA buttons ── */}
-          <div className="reveal reveal-delay-3" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginBottom: 64 }}>
+          {/* Primary CTA Buttons (Magnetic) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={scrollReveal}
+            style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginBottom: 48 }}
+          >
             {/* Email CTA */}
-            <CTAButton
+            <MagneticButton
               href={MAILTO}
               variant="primary"
-              ariaLabel="Send email to Tanay Sharma — opens your email client with a pre-filled message"
+              style={{
+                background: 'var(--text-1)',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '14px 32px',
+                fontSize: '1.1rem'
+              }}
             >
               <IconEmail />
               Send Me an Email
-            </CTAButton>
+            </MagneticButton>
 
             {/* WhatsApp CTA */}
-            <CTAButton
+            <MagneticButton
               href={WHATSAPP}
               variant="whatsapp"
-              ariaLabel="Chat with Tanay Sharma on WhatsApp — opens WhatsApp with a pre-filled message"
+              style={{
+                background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                border: 'none',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '14px 32px',
+                fontSize: '1.1rem'
+              }}
             >
               <IconWhatsApp />
               Chat on WhatsApp
-            </CTAButton>
-          </div>
+            </MagneticButton>
+          </motion.div>
 
-          {/* ── Pre-fill note ── */}
-          <div className="reveal" style={{ display: 'flex', justifyContent: 'center', marginBottom: 52 }}>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 400, lineHeight: 1.6 }}>
+          {/* Pre-fill note */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={scrollReveal}
+            style={{ display: 'flex', justifyContent: 'center', marginBottom: 64 }}
+          >
+            <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', textAlign: 'center', maxWidth: 400, lineHeight: 1.6, fontWeight: 500 }}>
               Both buttons auto-fill a message for you — just hit send. 🚀
             </p>
-          </div>
+          </motion.div>
 
-          {/* ── Info cards grid ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 52 }} className="contact-grid">
-            {infoCards.map((c, i) => (
-              <a
+          {/* Info cards grid */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            className="contact-grid"
+          >
+            {infoCards.map((c) => (
+              <motion.a
                 key={c.label}
                 href={c.href}
                 target={c.external ? '_blank' : undefined}
                 rel={c.external ? 'noopener noreferrer' : undefined}
                 aria-label={`${c.label}: ${c.value}`}
-                className={`card reveal reveal-delay-${i + 1}`}
-                style={{ padding: '22px 20px', display: 'block', textDecoration: 'none', outline: 'none' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = 'rgba(108,99,255,0.05)'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 16px 40px rgba(0,0,0,0.2)` }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.background = ''; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+                variants={scrollReveal}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="card"
+                style={{ padding: '28px 24px', display: 'block', background: 'var(--bg-card)', cursor: 'none' }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 11, background: c.bg, border: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: c.bg, border: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color }}>
                     {c.icon}
                   </div>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
                   </svg>
                 </div>
-                <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-1)', marginBottom: 2 }}>{c.label}</p>
-                <p style={{ color: 'var(--text-3)', fontSize: '0.7rem', marginBottom: 6 }}>{c.sub}</p>
-                <p style={{ fontSize: '0.72rem', fontWeight: 500, color: c.color, wordBreak: 'break-all' }}>{c.value}</p>
-              </a>
+                <p style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-1)', marginBottom: 4 }}>{c.label}</p>
+                <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', marginBottom: 10, fontWeight: 500 }}>{c.sub}</p>
+                <p style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-1)', wordBreak: 'break-all' }}>{c.value}</p>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
 
-          {/* ── Status pill ── */}
-          <div className="reveal" style={{ display: 'flex', justifyContent: 'center', marginBottom: 80 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 999, padding: '10px 24px' }}>
+          {/* Status pill */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={scrollReveal}
+            style={{ display: 'flex', justifyContent: 'center', marginBottom: 100 }}
+          >
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 999, padding: '10px 24px', boxShadow: 'var(--shadow)' }}>
               <span className="dot-live" />
-              <span style={{ color: 'var(--text-2)', fontSize: '0.875rem', fontWeight: 500 }}>Available for opportunities</span>
+              <span style={{ color: 'var(--text-2)', fontSize: '0.9rem', fontWeight: 550 }}>Available for opportunities</span>
               <span style={{ color: 'var(--text-3)' }}>·</span>
-              <span style={{ color: 'var(--text-3)', fontSize: '0.85rem' }}>Response within 24h</span>
+              <span style={{ color: 'var(--text-3)', fontSize: '0.88rem', fontWeight: 500 }}>Response within 24h</span>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* ── Footer ── */}
-        <footer style={{ borderTop: '1px solid var(--border)', padding: '32px 0' }}>
-          <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
+        {/* Footer */}
+        <footer style={{ borderTop: '1px solid var(--border)', padding: '40px 0', background: 'var(--bg)' }}>
+          <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
             <div>
-              <a href="#" style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: '1rem', color: 'var(--text-1)', display: 'block', marginBottom: 6 }}>
-                <span style={{ color: 'var(--accent)' }}>&lt;/&gt;</span> Tanay<span style={{ color: 'var(--accent)' }}>.</span>
+              <a href="#" style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-1)', display: 'block', marginBottom: 6, letterSpacing: '-0.02em', cursor: 'none' }}>
+                <span style={{ color: 'var(--accent-dark)' }}>&lt;/&gt;</span> Tanay<span style={{ color: 'var(--accent-dark)' }}>.</span>
               </a>
-              <p style={{ color: 'var(--text-3)', fontSize: '0.75rem' }}>
+              <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', fontWeight: 500 }}>
                 Designed &amp; Built by Tanay Sharma 💜 &copy; 2026
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {navLinks.map(href => (
-                <a key={href} href={href} style={{ color: 'var(--text-3)', fontSize: '0.78rem', padding: '4px 10px', borderRadius: 6, transition: 'color 0.2s', textTransform: 'capitalize' }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-1)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
+                <a key={href} href={href} style={{ color: 'var(--text-3)', fontSize: '0.9rem', fontWeight: 550, padding: '6px 12px', borderRadius: 8, transition: 'all 0.2s', textTransform: 'capitalize', cursor: 'none' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.background = 'rgba(0,0,0,0.02)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.background = 'transparent' }}
                 >{href.slice(1)}</a>
               ))}
             </div>
+            
             <div style={{ display: 'flex', gap: 10 }}>
               {[
                 { href: CONTACT.github, label: 'GitHub', icon: <IconGitHub /> },
@@ -256,9 +326,9 @@ export default function Contact() {
                   target={s.href.startsWith('http') ? '_blank' : undefined}
                   rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   aria-label={s.label}
-                  style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', transition: 'all 0.2s', outline: 'none' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--border-accent)'; e.currentTarget.style.background = 'var(--accent-dim)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', transition: 'all 0.25s', outline: 'none', cursor: 'none' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-dark)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-dim)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-card)'; e.currentTarget.style.transform = 'translateY(0)' }}
                 >{s.icon}</a>
               ))}
             </div>
@@ -267,9 +337,15 @@ export default function Contact() {
       </section>
 
       <style>{`
-        @media (max-width: 900px) { .contact-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+        .contact-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 64px;
+        }
+        @media (max-width: 900px) { .contact-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 560px) {
-          .contact-grid { grid-template-columns: 1fr !important; }
+          .contact-grid { grid-template-columns: 1fr; }
           #contact .cta-row { flex-direction: column; align-items: stretch; }
           #contact .cta-row a { justify-content: center; width: 100%; }
         }
