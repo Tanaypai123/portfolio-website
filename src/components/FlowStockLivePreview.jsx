@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import flowstockImg from '../flowstock.png'
 
 export default function FlowStockLivePreview() {
   const [mode, setMode] = useState('tour') // 'tour' or 'live'
   const [activeTab, setActiveTab] = useState(0) // 0: Dashboard, 1: Inventory, 2: Orders, 3: Analytics
+  const [interactionTrigger, setInteractionTrigger] = useState(0)
+  const lastInteractionRef = useRef(0)
 
-  // Auto-play interval for the product tour
+  // Auto-play interval for the product tour slides
   useEffect(() => {
     if (mode !== 'tour') return
     const interval = setInterval(() => {
@@ -14,6 +16,36 @@ export default function FlowStockLivePreview() {
     }, 3500)
     return () => clearInterval(interval)
   }, [mode])
+
+  // Auto-play cycling for the tabs (Tour <-> Live App)
+  useEffect(() => {
+    let timer;
+    const checkAndSwitch = () => {
+      const now = Date.now();
+      const timeSinceInteraction = now - lastInteractionRef.current;
+      if (timeSinceInteraction < 15000) {
+        const delayLeft = 15000 - timeSinceInteraction;
+        timer = setTimeout(checkAndSwitch, Math.max(delayLeft, 100));
+      } else {
+        setMode(prev => (prev === 'tour' ? 'live' : 'tour'));
+      }
+    };
+
+    const now = Date.now();
+    const timeSinceInteraction = now - lastInteractionRef.current;
+    const initialDelay = timeSinceInteraction < 15000 ? (15000 - timeSinceInteraction) : 10000;
+    
+    timer = setTimeout(checkAndSwitch, initialDelay);
+    return () => clearTimeout(timer);
+  }, [mode, interactionTrigger]);
+
+  const handleModeChange = (newMode) => {
+    lastInteractionRef.current = Date.now();
+    setInteractionTrigger(prev => prev + 1);
+    if (mode !== newMode) {
+      setMode(newMode);
+    }
+  };
 
   // Float animation using Framer Motion
   const floatTransition = {
@@ -49,7 +81,7 @@ export default function FlowStockLivePreview() {
       className="flowstock-live-preview-box"
     >
       {/* Browser Bar */}
-      <div style={{
+      <div className="browser-bar" style={{
         background: 'var(--bg)',
         borderBottom: '1px solid var(--border)',
         padding: '12px 16px',
@@ -61,14 +93,14 @@ export default function FlowStockLivePreview() {
         flexWrap: 'wrap'
       }}>
         {/* Three Window Controls */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }} className="browser-controls">
           <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#ff5f56' }} />
           <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#ffbd2e' }} />
           <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#27c93f' }} />
         </div>
 
         {/* URL Bar */}
-        <div style={{
+        <div className="browser-url-bar" style={{
           background: 'var(--bg-card)',
           border: '1.5px solid var(--border)',
           borderRadius: '8px',
@@ -83,19 +115,20 @@ export default function FlowStockLivePreview() {
           flexGrow: 1,
           maxWidth: '240px',
           justifyContent: 'center',
-          margin: '0 auto'
+          margin: '0 auto',
+          minWidth: 0
         }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          <span>flowstock.pages.dev</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>flowstock.pages.dev</span>
         </div>
 
-        {/* Live Indicator, Tour/Live Switcher, and Expand CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Live Indicator, Tour/Live Switcher, and Expand App CTA */}
+        <div className="browser-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Pulsing Live Dot */}
-          <div style={{
+          <div className="browser-live-badge" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -105,7 +138,8 @@ export default function FlowStockLivePreview() {
             borderRadius: '6px',
             fontSize: '0.68rem',
             fontWeight: 700,
-            color: '#4B6B5B'
+            color: '#4B6B5B',
+            flexShrink: 0
           }}>
             <span className="live-dot-pulsing" style={{
               width: '6px',
@@ -118,57 +152,96 @@ export default function FlowStockLivePreview() {
           </div>
 
           {/* Selector Switch (Tour / Live App) */}
-          <div style={{
+          <div className="browser-mode-switcher" style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             padding: '2px',
             borderRadius: '8px',
             display: 'flex',
-            gap: '2px'
+            gap: '2px',
+            flexShrink: 0,
+            position: 'relative',
+            zIndex: 1
           }}>
             <button
-              onClick={() => setMode('tour')}
+              onClick={() => handleModeChange('tour')}
+              className="browser-mode-btn"
               style={{
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 padding: '4px 10px',
                 border: 'none',
                 borderRadius: '6px',
-                background: mode === 'tour' ? 'var(--accent)' : 'transparent',
+                background: 'transparent',
                 color: mode === 'tour' ? '#fff' : 'var(--text-2)',
                 cursor: 'pointer',
-                transition: 'all 0.25s'
+                transition: 'color 0.25s',
+                position: 'relative'
               }}
             >
-              Tour
+              {mode === 'tour' && (
+                <motion.div
+                  layoutId="active-mode-pill"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'var(--accent)',
+                    borderRadius: '6px',
+                    zIndex: 0
+                  }}
+                  transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.5 }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1 }}>Tour</span>
             </button>
             <button
-              onClick={() => setMode('live')}
+              onClick={() => handleModeChange('live')}
+              className="browser-mode-btn"
               style={{
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 padding: '4px 10px',
                 border: 'none',
                 borderRadius: '6px',
-                background: mode === 'live' ? 'var(--accent)' : 'transparent',
+                background: 'transparent',
                 color: mode === 'live' ? '#fff' : 'var(--text-2)',
                 cursor: 'pointer',
-                transition: 'all 0.25s'
+                transition: 'color 0.25s',
+                position: 'relative'
               }}
             >
-              Live App
+              {mode === 'live' && (
+                <motion.div
+                  layoutId="active-mode-pill"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'var(--accent)',
+                    borderRadius: '6px',
+                    zIndex: 0
+                  }}
+                  transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.5 }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1 }}>Live App</span>
             </button>
           </div>
 
-          {/* Expand CTA Link Button with Tooltip */}
-          <div className="tooltip-container" style={{ position: 'relative' }}>
+          {/* Expand App CTA Link Button with Tooltip */}
+          <div className="tooltip-container" style={{ position: 'relative', flexShrink: 0 }}>
             <a
               href="https://flowstock.pages.dev/"
               target="_blank"
               rel="noopener noreferrer"
               className="expand-btn"
               style={{
-                fontSize: '0.68rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
                 padding: '6px 12px',
                 borderRadius: '8px',
@@ -177,17 +250,14 @@ export default function FlowStockLivePreview() {
                 color: 'var(--text-1)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
                 textDecoration: 'none',
                 cursor: 'pointer'
               }}
             >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="expand-btn-icon">
-                <line x1="7" y1="17" x2="17" y2="7"/>
-                <polyline points="7 7 17 7 17 17"/>
-              </svg>
-              <span>Expand</span>
+              <span className="expand-icon" style={{ display: 'inline-block' }}>🚀</span>
+              <span className="expand-btn-text">Expand App</span>
             </a>
             <span className="tooltip-text">Open Full Application</span>
           </div>
@@ -195,28 +265,33 @@ export default function FlowStockLivePreview() {
       </div>
 
       {/* Browser Body */}
-      <div style={{ flexGrow: 1, position: 'relative', overflow: 'hidden', background: '#FDFDFD', display: 'flex', flexDirection: 'column' }}>
-        {mode === 'live' ? (
-          <iframe
-            src="https://flowstock.pages.dev/landing"
-            title="FlowStock Live App"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              display: 'block'
-            }}
-          />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div className="browser-body" style={{ flexGrow: 1, position: 'relative', overflow: 'hidden', background: '#FDFDFD', display: 'flex', flexDirection: 'column' }}>
+        {/* Tour Container */}
+        <div
+          className="tour-body-container"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            opacity: mode === 'tour' ? 1 : 0,
+            pointerEvents: mode === 'tour' ? 'auto' : 'none',
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: mode === 'tour' ? 2 : 1
+          }}
+        >
             {/* Tour Sub-Tabs */}
-            <div style={{
+            <div className="tour-sub-tabs" style={{
               background: 'var(--bg-card)',
               borderBottom: '1px solid var(--border)',
               display: 'flex',
               padding: '0 12px',
               gap: '2px',
-              overflowX: 'auto'
+              overflowX: 'auto',
+              flexShrink: 0
             }}>
               {tabLabels.map((label, idx) => (
                 <button
@@ -241,7 +316,7 @@ export default function FlowStockLivePreview() {
             </div>
 
             {/* Slideshow Content */}
-            <div style={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }} className="tour-slides-wrapper">
               <AnimatePresence mode="wait">
                 {activeTab === 0 && (
                   <motion.div
@@ -272,7 +347,7 @@ export default function FlowStockLivePreview() {
                       padding: '3px 8px',
                       borderRadius: '4px',
                       fontWeight: 500
-                    }}>
+                    }} className="actual-app-badge">
                       Actual App Dashboard
                     </div>
                   </motion.div>
@@ -288,7 +363,7 @@ export default function FlowStockLivePreview() {
                     style={{ width: '100%', height: '100%', display: 'flex', background: '#F8F9FA' }}
                   >
                     {/* Simulated App Sidebar */}
-                    <div style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px' }}>
+                    <div className="simulated-sidebar" style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px', flexShrink: 0 }}>
                       <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'var(--accent-dim)' }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: '#EAEAEA' }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: 'var(--accent)', opacity: 0.7 }} />
@@ -296,7 +371,7 @@ export default function FlowStockLivePreview() {
                     </div>
 
                     {/* Inventory Main Panel */}
-                    <div style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="simulated-panel" style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111' }}>Stock Inventory</span>
                         <span style={{ fontSize: '0.68rem', padding: '2px 8px', background: 'var(--accent-dim)', color: 'var(--accent-dark)', borderRadius: '6px', fontWeight: 700 }}>4 Items Low</span>
@@ -305,10 +380,10 @@ export default function FlowStockLivePreview() {
                       {/* Mock Table */}
                       <div style={{ background: '#FFF', border: '1px solid #E5E5E5', borderRadius: '8px', overflow: 'hidden' }}>
                         {/* Table Header */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', background: '#FAFBFB', borderBottom: '1px solid #E5E5E5', padding: '6px 10px', fontSize: '0.64rem', fontWeight: 700, color: '#555' }}>
+                        <div className="mock-table-header" style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr', background: '#FAFBFB', borderBottom: '1px solid #E5E5E5', padding: '6px 10px', fontSize: '0.64rem', fontWeight: 700, color: '#555' }}>
                           <span>Product Item</span>
                           <span>Stock Level</span>
-                          <span style={{ textAlign: 'right' }}>Status</span>
+                          <span style={{ textAlign: 'right' }} className="mock-table-status-col">Status</span>
                         </div>
                         {/* Items */}
                         {[
@@ -317,15 +392,15 @@ export default function FlowStockLivePreview() {
                           { name: 'Chana Dal Premium', level: 90, color: '#608F7B', status: 'In Stock' },
                           { name: 'Refined White Sugar', level: 0, color: '#FF6b6b', status: 'Out of Stock' }
                         ].map((item, idx) => (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', borderBottom: idx < 3 ? '1px solid #EFEFEF' : 'none', padding: '7px 10px', fontSize: '0.68rem', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 650, color: '#222' }}>{item.name}</span>
+                          <div key={idx} className="mock-table-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr', borderBottom: idx < 3 ? '1px solid #EFEFEF' : 'none', padding: '7px 10px', fontSize: '0.68rem', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 650, color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <div style={{ width: '32px', height: '4px', background: '#EEE', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div style={{ width: '32px', height: '4px', background: '#EEE', borderRadius: '2px', overflow: 'hidden', flexShrink: 0 }}>
                                 <div style={{ width: `${item.level}%`, height: '100%', background: item.color }} />
                               </div>
                               <span style={{ fontSize: '0.58rem', color: '#666' }}>{item.level}%</span>
                             </div>
-                            <span style={{
+                            <span className="mock-table-status-col" style={{
                               textAlign: 'right',
                               fontWeight: 700,
                               fontSize: '0.58rem',
@@ -348,7 +423,7 @@ export default function FlowStockLivePreview() {
                     style={{ width: '100%', height: '100%', display: 'flex', background: '#F8F9FA' }}
                   >
                     {/* Simulated App Sidebar */}
-                    <div style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px' }}>
+                    <div className="simulated-sidebar" style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px', flexShrink: 0 }}>
                       <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'var(--accent-dim)' }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: 'var(--accent)', opacity: 0.7 }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: '#EAEAEA' }} />
@@ -356,10 +431,10 @@ export default function FlowStockLivePreview() {
                     </div>
 
                     {/* Orders Main Panel */}
-                    <div style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="simulated-panel" style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111' }}>Live Order Stream</span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                        <div style={{ display: 'flex', gap: '4px' }} className="mock-panel-filters">
                           <span style={{ fontSize: '0.58rem', padding: '2px 6px', background: '#EAEAEA', borderRadius: '4px', fontWeight: 600 }}>Filter: All</span>
                         </div>
                       </div>
@@ -371,12 +446,12 @@ export default function FlowStockLivePreview() {
                           { id: 'ORD-5923', client: 'Jaipur Super Stockist', value: '₹118,200', status: 'Assigned Driver', badgeBg: 'rgba(176,141,105,0.12)', badgeColor: '#8E704E' },
                           { id: 'ORD-5922', client: 'Bikaner Grocery Mart', value: '₹8,900', status: 'Delivered', badgeBg: '#E9ECEF', badgeColor: '#495057' }
                         ].map((ord) => (
-                          <div key={ord.id} style={{ background: '#FFF', border: '1px solid #E5E5E5', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div key={ord.id} style={{ background: '#FFF', border: '1px solid #E5E5E5', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }} className="mock-order-row">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
                               <span style={{ fontSize: '0.64rem', fontWeight: 700, color: 'var(--text-3)' }}>{ord.id}</span>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#111' }}>{ord.client}</span>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ord.client}</span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }} className="mock-order-meta">
                               <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--accent-dark)' }}>{ord.value}</span>
                               <span style={{
                                 fontSize: '0.58rem',
@@ -385,7 +460,7 @@ export default function FlowStockLivePreview() {
                                 borderRadius: '5px',
                                 background: ord.badgeBg,
                                 color: ord.badgeColor
-                              }}>{ord.status}</span>
+                              }} className="mock-order-badge">{ord.status}</span>
                             </div>
                           </div>
                         ))}
@@ -404,7 +479,7 @@ export default function FlowStockLivePreview() {
                     style={{ width: '100%', height: '100%', display: 'flex', background: '#F8F9FA' }}
                   >
                     {/* Simulated App Sidebar */}
-                    <div style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px' }}>
+                    <div className="simulated-sidebar" style={{ width: '50px', borderRight: '1px solid #EAEAEA', background: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '14px', flexShrink: 0 }}>
                       <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'var(--accent-dim)' }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: '#EAEAEA' }} />
                       <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: '#EAEAEA' }} />
@@ -412,17 +487,17 @@ export default function FlowStockLivePreview() {
                     </div>
 
                     {/* Analytics Main Panel */}
-                    <div style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="simulated-panel" style={{ flexGrow: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
                       <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111' }}>Business Metrics Overview</span>
 
                       {/* Top stat rows */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }} className="mock-stats-row">
                         {[
                           { lbl: 'Gross Value', val: '₹3.42L' },
                           { lbl: 'Total Orders', val: '1,420' },
                           { lbl: 'Completion', val: '98.4%' }
                         ].map((stat, idx) => (
-                          <div key={idx} style={{ background: '#FFF', border: '1px solid #E5E5E5', borderRadius: '6px', padding: '6px 8px' }}>
+                          <div key={idx} style={{ background: '#FFF', border: '1px solid #E5E5E5', borderRadius: '6px', padding: '6px 8px' }} className="mock-stat-box">
                             <p style={{ fontSize: '0.54rem', color: 'var(--text-3)', fontWeight: 600 }}>{stat.lbl}</p>
                             <p style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--accent-dark)', marginTop: '2px' }}>{stat.val}</p>
                           </div>
@@ -457,11 +532,59 @@ export default function FlowStockLivePreview() {
                 )}
               </AnimatePresence>
             </div>
-          </div>
-        )}
+        </div>
+
+        {/* Live App Container */}
+        <div
+          className="live-app-container"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            opacity: mode === 'live' ? 1 : 0,
+            pointerEvents: mode === 'live' ? 'auto' : 'none',
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: mode === 'live' ? 2 : 1,
+            overflow: 'hidden'
+          }}
+        >
+          <motion.div
+            animate={mode === 'live' ? { y: [0, -750, -750, 0] } : { y: 0 }}
+            transition={
+              mode === 'live'
+                ? {
+                    times: [0, 0.45, 0.55, 1],
+                    duration: 15,
+                    ease: "easeInOut",
+                    repeat: Infinity
+                  }
+                : { duration: 0.4, ease: "easeOut" }
+            }
+            style={{
+              width: '100%',
+              height: '1400px',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+          >
+            <iframe
+              src="https://flowstock.pages.dev/landing"
+              title="FlowStock Live App"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                display: 'block'
+              }}
+            />
+          </motion.div>
+        </div>
       </div>
 
-      {/* CSS overrides for pulsing green live indicator dot, tooltips, and hover effects */}
+      {/* CSS overrides for pulsing green live indicator dot, tooltips, and responsive layout styling */}
       <style>{`
         .live-dot-pulsing {
           animation: pulse-live-dot 1.8s ease-in-out infinite;
@@ -480,25 +603,68 @@ export default function FlowStockLivePreview() {
           box-shadow: 0 30px 72px rgba(0, 0, 0, 0.08) !important;
           border-color: rgba(176, 141, 105, 0.3) !important;
         }
+        
+        /* Shimmering and pulsing Expand App CTA */
         .expand-btn {
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                      box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                      background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                      border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+          overflow: hidden;
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+                      background 300ms cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+          animation: pulse-expand 2.8s ease-in-out infinite;
         }
+        @keyframes pulse-expand {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02), 0 0 0px rgba(176, 141, 105, 0);
+            border-color: var(--border);
+          }
+          50% {
+            transform: scale(1.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 0 8px rgba(176, 141, 105, 0.25);
+            border-color: rgba(176, 141, 105, 0.4);
+          }
+        }
+        .expand-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -150%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          transform: skewX(-25deg);
+          pointer-events: none;
+          animation: shine-expand 6s ease-in-out infinite;
+        }
+        @keyframes shine-expand {
+          0% { left: -150%; }
+          15% { left: 150%; }
+          100% { left: 150%; }
+        }
+        
         .expand-btn:hover {
-          transform: translateY(-2px) scale(1.03);
-          border-color: rgba(176, 141, 105, 0.4) !important;
-          background: var(--accent) !important;
-          color: #fff !important;
-          box-shadow: 0 4px 14px rgba(176, 141, 105, 0.35) !important;
+          transform: scale(1.08) !important;
+          border-color: var(--accent) !important;
+          background: var(--accent-dim) !important;
+          color: var(--accent-dark) !important;
+          box-shadow: 0 8px 24px rgba(176, 141, 105, 0.35) !important;
+          animation: none; /* Pause pulse on hover */
         }
-        .expand-btn-icon {
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        .expand-icon {
+          display: inline-block;
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .expand-btn:hover .expand-btn-icon {
-          transform: rotate(15deg);
+        .expand-btn:hover .expand-icon {
+          transform: translate(2.5px, -2.5px);
         }
+
         .tooltip-container {
           position: relative;
           display: inline-block;
@@ -530,6 +696,103 @@ export default function FlowStockLivePreview() {
           visibility: visible;
           opacity: 1;
           transform: scale(1) translateY(0);
+        }
+
+        /* ─── MOBILE RESPONSIVENESS OVERRIDES ─── */
+        @media (max-width: 767px) {
+          .flowstock-live-preview-box {
+            aspect-ratio: auto !important;
+            height: auto !important;
+            min-height: 290px;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+          }
+          .browser-bar {
+            padding: 8px 10px !important;
+            gap: 6px !important;
+          }
+          .browser-controls {
+            display: none !important; /* Hide window dots on mobile to save space */
+          }
+          .browser-url-bar {
+            max-width: 100px !important;
+            padding: 3px 6px !important;
+            font-size: 0.65rem !important;
+          }
+          .browser-url-bar span {
+            max-width: 70px !important;
+          }
+          .browser-live-badge {
+            padding: 2px 5px !important;
+            font-size: 0.6rem !important;
+            gap: 4px !important;
+          }
+          .browser-mode-switcher {
+            border-radius: 6px !important;
+          }
+          .browser-mode-btn {
+            font-size: 0.6rem !important;
+            padding: 3px 6px !important;
+            border-radius: 4px !important;
+          }
+          .expand-btn {
+            font-size: 0.6rem !important;
+            padding: 4px 8px !important;
+            border-radius: 6px !important;
+          }
+          .expand-btn-text {
+            display: none !important; /* Only show icon on extremely narrow screens, or we can keep it as is */
+          }
+          .tour-body-container {
+            flex-direction: column-reverse !important;
+          }
+          .tour-sub-tabs {
+            border-top: 1px solid var(--border);
+            border-bottom: none !important;
+            justify-content: space-around;
+            padding: 0 !important;
+          }
+          .tour-sub-tabs button {
+            padding: 8px 10px !important;
+            font-size: 0.68rem !important;
+            flex-grow: 1;
+            text-align: center;
+          }
+          .simulated-sidebar {
+            display: none !important; /* Hide Sidebar on mobile to fit contents */
+          }
+          .simulated-panel {
+            padding: 10px 12px !important;
+          }
+          .mock-table-header, .mock-table-row {
+            grid-template-columns: 1.5fr 1fr !important;
+          }
+          .mock-table-status-col {
+            display: none !important; /* Hide status column in inventory table on mobile */
+          }
+          .mock-order-row {
+            padding: 6px 10px !important;
+          }
+          .mock-order-badge {
+            display: none !important; /* Hide order status badge on mobile */
+          }
+          .mock-order-meta {
+            gap: 0 !important;
+          }
+          .mock-stat-box {
+            padding: 4px 6px !important;
+          }
+          .mock-stat-box p:first-of-type {
+            font-size: 0.5rem !important;
+          }
+          .mock-stat-box p:last-of-type {
+            font-size: 0.68rem !important;
+          }
+          .actual-app-badge {
+            font-size: 0.55rem !important;
+            padding: 2px 6px !important;
+          }
         }
       `}</style>
     </motion.div>
