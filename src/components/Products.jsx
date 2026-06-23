@@ -4,6 +4,7 @@ import flowstockImg from '../flowstock.png'
 import hireblindImg from '../hireblind.png'
 import FlowStockEcosystem from './FlowStockEcosystem'
 import HireBlindArchitecture from './HireBlindArchitecture'
+import FlowStockLivePreview from './FlowStockLivePreview'
 
 const products = [
   {
@@ -330,53 +331,64 @@ function FlowStockCaseStudy({ product }) {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* ─── SECTION 1: HERO ARCHITECTURE ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
         
-        {/* Header Title Block */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 16,
-              background: product.gradient,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Bricolage Grotesque',sans-serif",
-              fontWeight: 700, fontSize: '1.6rem', color: '#fff',
-              boxShadow: '0 8px 20px rgba(176,141,105,0.15)', flexShrink: 0
-            }}>
-              {product.letter}
-            </div>
-            <div>
-              <h3 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: '1.95rem', color: 'var(--text-1)', lineHeight: 1.1 }}>{product.name}</h3>
-              <p style={{ color: 'var(--text-3)', fontSize: '1.05rem', fontWeight: 600, marginTop: 4 }}>{product.tagline}</p>
-            </div>
-          </div>
+        {/* Top Split Layout: Details & Live Preview */}
+        <div className="flowstock-hero-grid">
           
-          {/* Header CTAs and Status Badge in the side space */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {product.demoUrl && (
-                <a href={product.demoUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ fontSize: '0.9rem', padding: '8px 18px', borderRadius: '8px' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                  Live Demo
-                </a>
-              )}
-              <a href="https://github.com/Tanaypai123" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.9rem', padding: '8px 18px', borderRadius: '8px', background: 'var(--bg-card)' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
-                GitHub
-              </a>
+          {/* Left Panel: App Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {/* Header Title Block */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 16,
+                background: product.gradient,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Bricolage Grotesque',sans-serif",
+                fontWeight: 700, fontSize: '1.6rem', color: '#fff',
+                boxShadow: '0 8px 20px rgba(176,141,105,0.15)', flexShrink: 0
+              }}>
+                {product.letter}
+              </div>
+              <div>
+                <h3 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: '1.95rem', color: 'var(--text-1)', lineHeight: 1.1 }}>{product.name}</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '1.05rem', fontWeight: 600, marginTop: 4 }}>{product.tagline}</p>
+              </div>
             </div>
+            
+            {/* Project Overview */}
+            <p style={{ color: 'var(--text-2)', fontSize: '1.08rem', lineHeight: 1.8, margin: 0 }}>
+              {product.description}
+            </p>
 
-            <span className={`badge ${product.statusClass}`} style={{ padding: '6px 14px', fontSize: '0.85rem', flexShrink: 0 }}>
-              <span className="dot-live" style={{ marginRight: 6 }} />
-              {product.status}
-            </span>
+            {/* CTAs and Status Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {product.demoUrl && (
+                  <a href={product.demoUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ fontSize: '0.9rem', padding: '8px 18px', borderRadius: '8px' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                    Live Demo
+                  </a>
+                )}
+                <a href="https://github.com/Tanaypai123" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.9rem', padding: '8px 18px', borderRadius: '8px', background: 'var(--bg-card)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                  GitHub
+                </a>
+              </div>
+
+              <span className={`badge ${product.statusClass}`} style={{ padding: '6px 14px', fontSize: '0.85rem', flexShrink: 0 }}>
+                <span className="dot-live" style={{ marginRight: 6 }} />
+                {product.status}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Project Overview */}
-        <p style={{ color: 'var(--text-2)', fontSize: '1.08rem', lineHeight: 1.8, margin: '8px 0 0 0' }}>
-          {product.description}
-        </p>
+          {/* Right Panel: Live Product Preview Browser */}
+          <div style={{ width: '100%' }}>
+            <FlowStockLivePreview />
+          </div>
+
+        </div>
 
         {/* Full Width Ecosystem Diagram */}
         <div style={{ width: '100%', marginTop: 8 }}>
@@ -488,6 +500,18 @@ function FlowStockCaseStudy({ product }) {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
           gap: 12px 24px;
+        }
+        .flowstock-hero-grid {
+          display: grid;
+          grid-template-columns: 1.15fr 0.85fr;
+          gap: 48px;
+          align-items: center;
+        }
+        @media(max-width:960px){
+          .flowstock-hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 36px !important;
+          }
         }
         @media(max-width:767px){
           .flowstock-case-study { padding: 24px 20px !important; gap: 32px !important; }
